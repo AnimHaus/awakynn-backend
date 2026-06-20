@@ -123,6 +123,16 @@ async def delete_message(msg_id: str, _admin: User = Depends(require_admin)):
     await msg.delete()
 
 
+# ── Public: get approved testimonials (for website display) ──────────────────
+
+@router.get("/testimonials/approved", response_model=List[TestimonialOut])
+async def list_approved_testimonials():
+    items = await TestimonialSubmission.find(
+        TestimonialSubmission.approved == True  # noqa: E712
+    ).sort(-TestimonialSubmission.created_at).to_list()
+    return [_test_out(t) for t in items]
+
+
 # ── Admin: list testimonials ─────────────────────────────────────────────────
 
 @router.get("/testimonials", response_model=List[TestimonialOut])
