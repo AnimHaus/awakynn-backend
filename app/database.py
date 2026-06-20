@@ -15,9 +15,23 @@ _client: AsyncIOMotorClient | None = None
 async def connect_db() -> None:
     global _client
     _client = AsyncIOMotorClient(settings.MONGODB_URL)
+
+    # awakynn — yoga classes, contact/testimonials, site settings
     await init_beanie(
-        database=_client[settings.DB_NAME],
-        document_models=[Product, Order, User, ClassSession, SiteSettings, ContactMessage, TestimonialSubmission],
+        database=_client[settings.DB_AWAKYNN],
+        document_models=[ClassSession, ContactMessage, TestimonialSubmission, SiteSettings],
+    )
+
+    # grabfabs — products and orders
+    await init_beanie(
+        database=_client[settings.DB_GRABFABS],
+        document_models=[Product, Order],
+    )
+
+    # shared — user accounts (used by both brands)
+    await init_beanie(
+        database=_client[settings.DB_SHARED],
+        document_models=[User],
     )
 
 

@@ -6,7 +6,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     MONGODB_URL: str
-    DB_NAME: str = "grabfabs"
+
+    # Per-brand databases
+    DB_AWAKYNN: str = "awakynn"
+    DB_GRABFABS: str = "grabfabs"
+    DB_SHARED: str = "shared"
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
