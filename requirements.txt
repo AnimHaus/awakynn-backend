@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+motor==3.7.0
+beanie==1.29.0
+pydantic[email]
+pydantic-settings
+python-jose[cryptography]
+bcrypt==4.2.1
+python-dotenv
+boto3
+python-multipart
+httpx
+google-api-python-client
+google-auth

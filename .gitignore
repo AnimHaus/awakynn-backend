@@ -1,0 +1,115 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Type checkers
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Ruff
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+
+# FastAPI/Uvicorn
+uvicorn.log
+
+# Database
+*.db
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage
+coverage.xml
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Local configuration
+config.local.py
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Uploaded media
+uploads/
+media/
+
+# Alembic migrations (optional)
+# Uncomment if migrations are generated and shouldn't be tracked
+# alembic/versions/
+
+# Secrets
+secrets.json
+credentials.json
+
+# Cache
+.cache/
+
+# Docker
+docker-compose.override.yml
+
+# Node.js (if using frontend in same repo)
+node_modules/
+.next/
+out/
+
+# Mac/Linux hidden files
+.*.swp
