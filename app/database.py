@@ -6,8 +6,9 @@ from app.models.product import Product
 from app.models.order import Order
 from app.models.user import User
 from app.models.class_session import ClassSession
-from app.models.site_settings import SiteSettings
 from app.models.contact import ContactMessage, TestimonialSubmission
+from app.models.event import Event
+from app.models.site_settings import SiteSettings
 
 _client: AsyncIOMotorClient | None = None
 
@@ -19,7 +20,7 @@ async def connect_db() -> None:
     # awakynn — yoga classes, contact/testimonials, site settings
     await init_beanie(
         database=_client[settings.DB_AWAKYNN],
-        document_models=[ClassSession, ContactMessage, TestimonialSubmission, SiteSettings],
+        document_models=[ClassSession, ContactMessage, TestimonialSubmission, SiteSettings, Event],
     )
 
     # grabfabs — products and orders
