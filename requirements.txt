@@ -12,3 +12,4 @@ python-multipart
 httpx
 google-api-python-client
 google-auth
+razorpay

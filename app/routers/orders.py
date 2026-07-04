@@ -2,7 +2,7 @@ from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.deps import get_current_user, require_admin
+from app.core.deps import get_current_user, get_optional_user, require_admin
 from app.models.order import Order, OrderStatus, PaymentStatus
 from app.models.product import Product
 from app.models.user import User
@@ -36,7 +36,7 @@ def _serialize(o: Order) -> dict:
 @router.post("/", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
 async def create_order(
     body: OrderCreate,
-    current_user: Annotated[Optional[User], Depends(get_current_user)] = None,
+    current_user: Annotated[Optional[User], Depends(get_optional_user)] = None,
 ):
     # Validate products and calculate subtotal
     items_out = []
@@ -140,11 +140,38 @@ async def update_order_status(
     return _serialize(order)
 
 
+@router.post("/{order_id}/razorpay-order", response_model=dict)
+async def create_razorpay_order(order_id: str):
+    """Create a Razorpay order for an existing backend order and persist razorpay_order_id."""
+    import razorpay
+    from app.config import settings
+
+    order = await Order.get(order_id)
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+    rz_order = client.order.create({
+        "amount": int(order.total * 100),  # paise
+        "currency": "INR",
+        "receipt": str(order.id),
+        "payment_capture": 1,
+    })
+
+    await order.set({"razorpay_order_id": rz_order["id"]})
+    return {
+        "razorpay_order_id": rz_order["id"],
+        "amount": rz_order["amount"],
+        "currency": rz_order["currency"],
+        "key_id": settings.RAZORPAY_KEY_ID,
+    }
+
+
 @router.post("/{order_id}/verify-payment", response_model=OrderOut)
 async def verify_payment(
     order_id: str,
     body: PaymentVerify,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[Optional[User], Depends(get_optional_user)] = None,
 ):
     import hashlib
     import hmac
@@ -153,8 +180,6 @@ async def verify_payment(
     order = await Order.get(order_id)
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-    if order.user_id and order.user_id != str(current_user.id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     # Verify Razorpay signature
     msg = f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode()

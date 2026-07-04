@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import close_db, connect_db
 from app.routers import auth, classes, contact, events as events_router, gallery as gallery_router, orders, products, settings as settings_router, uploads
+from app.routers import service_bookings
 
 
 @asynccontextmanager
@@ -38,6 +39,7 @@ app.include_router(classes.router, prefix="/api/v1")
 app.include_router(contact.router, prefix="/api/v1")
 app.include_router(events_router.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
+app.include_router(service_bookings.router, prefix="/api/v1")
 app.include_router(gallery_router.router, prefix="/api/v1")
 
 

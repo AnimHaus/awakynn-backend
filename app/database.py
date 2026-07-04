@@ -10,6 +10,7 @@ from app.models.contact import ContactMessage, TestimonialSubmission
 from app.models.event import Event
 from app.models.site_settings import SiteSettings
 from app.models.gallery import GalleryItem
+from app.models.service_booking import ServiceBooking
 
 _client: AsyncIOMotorClient | None = None
 
@@ -18,10 +19,10 @@ async def connect_db() -> None:
     global _client
     _client = AsyncIOMotorClient(settings.MONGODB_URL)
 
-    # awakynn — yoga classes, contact/testimonials, site settings
+    # awakynn — yoga classes, contact/testimonials, site settings, service bookings
     await init_beanie(
         database=_client[settings.DB_AWAKYNN],
-        document_models=[ClassSession, ContactMessage, TestimonialSubmission, SiteSettings, Event, GalleryItem],
+        document_models=[ClassSession, ContactMessage, TestimonialSubmission, SiteSettings, Event, GalleryItem, ServiceBooking],
     )
 
     # grabfabs — products and orders
