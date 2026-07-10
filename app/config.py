@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     R2_BUCKET_FESTIQ: str = ""
     R2_BUCKET_ESTRA: str = ""
 
+    # Per-brand public CDN base URLs (without trailing slash)
+    CDN_AWAKYNN: str = ""
+    CDN_GRABFABS: str = ""
+    CDN_FESTIQ: str = ""
+    CDN_ESTRA: str = ""
+
     # Google Calendar / Meet
     GOOGLE_SERVICE_ACCOUNT_EMAIL: str = ""
     GOOGLE_PRIVATE_KEY: str = ""
@@ -55,6 +61,16 @@ class Settings(BaseSettings):
             "estra": self.R2_BUCKET_ESTRA,
         }
         return {brand: bucket for brand, bucket in mapping.items() if bucket}
+
+    @property
+    def cdn_base_map(self) -> dict[str, str]:
+        """Map of brand slug → public CDN base URL (no trailing slash)."""
+        return {
+            "awakynn": self.CDN_AWAKYNN,
+            "grabfabs": self.CDN_GRABFABS,
+            "festiq": self.CDN_FESTIQ,
+            "estra": self.CDN_ESTRA,
+        }
 
     @property
     def cors_origins_list(self) -> List[str]:

@@ -58,10 +58,9 @@ def _bucket_for_brand(brand: str) -> str:
     return bucket
 
 
-def _public_url(bucket: str, key: str) -> str:
-    """Build the public CDN URL for an uploaded object."""
-    # Public CDN is pub-<account_id>.r2.dev, separate from the S3 API endpoint
-    cdn_base = f"https://pub-{settings.R2_ACCOUNT_ID}.r2.dev"
+def _public_url(brand: str, key: str) -> str:
+    """Build the public CDN URL for an uploaded object using the brand's CDN base."""
+    cdn_base = settings.cdn_base_map.get(brand) or f"https://pub-{settings.R2_ACCOUNT_ID}.r2.dev"
     return f"{cdn_base}/{key}"
 
 
@@ -136,7 +135,7 @@ async def upload_image(file: UploadFile, brand: str, folder: str = "products") -
             detail=f"R2 upload request error: {exc}",
         ) from exc
 
-    return _public_url(bucket, key)
+    return _public_url(brand, key)
 
 
 async def delete_image(key: str, brand: str) -> None:
