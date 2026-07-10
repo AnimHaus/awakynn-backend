@@ -90,7 +90,9 @@ async def update_product(
     update_data = body.model_dump(exclude_unset=True)
     if "pricing" in update_data:
         update_data["pricing"] = [s.model_dump() for s in body.pricing]
-    await product.set(update_data)
+    for field_name, value in update_data.items():
+        setattr(product, field_name, value)
+    await product.save()
     return _serialize(product)
 
 

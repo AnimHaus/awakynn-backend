@@ -27,6 +27,7 @@ def _serialize(o: Order) -> dict:
         "payment_status": o.payment_status,
         "shipping_address": o.shipping_address,
         "razorpay_order_id": o.razorpay_order_id,
+        "razorpay_invoice_id": o.razorpay_invoice_id,
         "notes": o.notes,
         "created_at": o.created_at,
         "updated_at": o.updated_at,
@@ -176,6 +177,7 @@ async def verify_payment(
     import hashlib
     import hmac
     from app.config import settings
+    from app.services.invoice import create_invoice
 
     order = await Order.get(order_id)
     if not order:
@@ -194,4 +196,20 @@ async def verify_payment(
         "status": OrderStatus.confirmed,
         "razorpay_payment_id": body.razorpay_payment_id,
     })
+
+    # Generate and issue Razorpay invoice automatically
+    addr = order.shipping_address or {}
+    invoice_id = create_invoice(
+        order_id=str(order.id),
+        razorpay_order_id=body.razorpay_order_id,
+        items=order.items,
+        shipping_fee=order.shipping_fee,
+        customer_name=addr.get("full_name") or (current_user.name if current_user else "Customer"),
+        customer_email=order.guest_email or (current_user.email if current_user else None),
+        customer_phone=addr.get("phone") or (current_user.phone if current_user and hasattr(current_user, "phone") else None),
+        shipping_address=addr,
+    )
+    if invoice_id:
+        await order.set({"razorpay_invoice_id": invoice_id})
+
     return _serialize(order)

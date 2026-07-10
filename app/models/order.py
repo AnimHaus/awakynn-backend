@@ -57,6 +57,7 @@ class Order(Document):
     shipping_address: dict = {}
     razorpay_order_id: Optional[str] = None
     razorpay_payment_id: Optional[str] = None
+    razorpay_invoice_id: Optional[str] = None
     notes: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

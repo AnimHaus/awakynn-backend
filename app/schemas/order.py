@@ -43,6 +43,7 @@ class OrderOut(BaseModel):
     payment_status: PaymentStatus
     shipping_address: dict
     razorpay_order_id: Optional[str]
+    razorpay_invoice_id: Optional[str] = None
     notes: str
     created_at: datetime
     updated_at: datetime
