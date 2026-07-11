@@ -197,6 +197,13 @@ async def verify_payment(
         "razorpay_payment_id": body.razorpay_payment_id,
     })
 
+    # Deduct stock for each item purchased
+    for item in order.items:
+        product = await Product.find_one(Product.slug == item["slug"])
+        if product and product.stock > 0:
+            new_stock = max(0, product.stock - item["quantity"])
+            await product.set({"stock": new_stock})
+
     # Generate and issue Razorpay invoice automatically
     addr = order.shipping_address or {}
     invoice_id = create_invoice(
