@@ -59,3 +59,27 @@ class PaymentVerify(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+
+
+# Public-safe tracking response — never exposes full email or payment IDs
+class OrderTrackOut(BaseModel):
+    id: str
+    razorpay_order_id: Optional[str] = None
+    items: List[dict]
+    subtotal: float
+    shipping_fee: float
+    total: float
+    status: OrderStatus
+    payment_status: PaymentStatus
+    shipping_address: dict
+    notes: str
+    created_at: datetime
+    updated_at: datetime
+    # Partially masked email so user can confirm it's theirs
+    masked_email: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class TrackByEmailRequest(BaseModel):
+    email: str

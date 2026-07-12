@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
+    RAZORPAY_WEBHOOK_SECRET: str = ""
 
     # R2 / S3-compatible storage
     R2_ACCESS_KEY_ID: str = ""

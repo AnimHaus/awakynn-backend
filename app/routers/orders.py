@@ -6,7 +6,7 @@ from app.core.deps import get_current_user, get_optional_user, require_admin
 from app.models.order import Order, OrderStatus, PaymentStatus
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.order import OrderCreate, OrderOut, OrderStatusUpdate, PaymentVerify
+from app.schemas.order import OrderCreate, OrderOut, OrderStatusUpdate, PaymentVerify, OrderTrackOut, TrackByEmailRequest
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -101,7 +101,64 @@ async def my_orders(
     return [_serialize(o) for o in orders]
 
 
-@router.get("/{order_id}", response_model=OrderOut)
+# ── Public tracking endpoints (no auth required) ─────────────────────────────
+
+def _mask_email(email: str) -> str:
+    """Return e.g. 'jo***@gmail.com' so the customer can confirm it's theirs."""
+    try:
+        local, domain = email.split("@", 1)
+        visible = local[:2] if len(local) >= 2 else local[:1]
+        return f"{visible}***@{domain}"
+    except ValueError:
+        return "***"
+
+
+def _serialize_track(o: Order) -> dict:
+    email = o.guest_email or ""
+    return {
+        "id": str(o.id),
+        "razorpay_order_id": o.razorpay_order_id,
+        "items": o.items,
+        "subtotal": o.subtotal,
+        "shipping_fee": o.shipping_fee,
+        "total": o.total,
+        "status": o.status,
+        "payment_status": o.payment_status,
+        "shipping_address": o.shipping_address,
+        "notes": o.notes,
+        "created_at": o.created_at,
+        "updated_at": o.updated_at,
+        "masked_email": _mask_email(email) if email else None,
+    }
+
+
+@router.get("/track/{order_id}", response_model=OrderTrackOut)
+async def track_order_by_id(order_id: str):
+    """Public endpoint — accepts a MongoDB ObjectId OR a Razorpay order ID (order_…)."""
+    if order_id.startswith("order_"):
+        order = await Order.find_one(Order.razorpay_order_id == order_id)
+    else:
+        order = await Order.get(order_id)
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    return _serialize_track(order)
+
+
+@router.post("/track/by-email", response_model=List[OrderTrackOut])
+async def track_orders_by_email(body: TrackByEmailRequest):
+    """Public endpoint — returns all guest orders matching the supplied email."""
+    # Normalise to lowercase to avoid case-sensitivity issues
+    email = body.email.strip().lower()
+    orders = (
+        await Order.find(Order.guest_email == email)
+        .sort(-Order.created_at)
+        .limit(20)
+        .to_list()
+    )
+    return [_serialize_track(o) for o in orders]
+
+
+
 async def get_order(
     order_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
