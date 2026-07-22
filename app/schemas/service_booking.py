@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
-from app.models.service_booking import BookingStatus, BookingPaymentStatus
+from app.models.service_booking import BookingStatus, BookingPaymentStatus, PaymentMethod
 
 
 class ServiceBookingCreate(BaseModel):
@@ -11,6 +11,7 @@ class ServiceBookingCreate(BaseModel):
     customer_name: str
     customer_email: str
     customer_phone: str
+    is_subscription: bool = False
     notes: str = ""
 
 
@@ -24,6 +25,7 @@ class ServiceBookingOut(BaseModel):
     customer_phone: str
     status: BookingStatus
     payment_status: BookingPaymentStatus
+    payment_method: PaymentMethod
     razorpay_order_id: Optional[str]
     razorpay_subscription_id: Optional[str]
     is_subscription: bool

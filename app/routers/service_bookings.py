@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.config import settings
 from app.core.deps import require_admin
-from app.models.service_booking import BookingPaymentStatus, BookingStatus, ServiceBooking
+from app.models.service_booking import BookingPaymentStatus, BookingStatus, PaymentMethod, ServiceBooking
 from app.models.user import User
 from app.schemas.service_booking import (
     BookingPaymentVerify,
@@ -30,6 +30,7 @@ def _serialize(b: ServiceBooking) -> dict:
         "customer_phone": b.customer_phone,
         "status": b.status,
         "payment_status": b.payment_status,
+        "payment_method": b.payment_method,
         "razorpay_order_id": b.razorpay_order_id,
         "razorpay_subscription_id": b.razorpay_subscription_id,
         "is_subscription": b.is_subscription,
@@ -165,6 +166,29 @@ async def verify_subscription_payment(booking_id: str, body: SubscriptionPayment
     return _serialize(booking)
 
 
+# ── Cash payment (public) ────────────────────────────────────────────────────
+
+@router.post("/bookings/cash", response_model=ServiceBookingOut, status_code=status.HTTP_201_CREATED)
+async def create_cash_booking(body: ServiceBookingCreate):
+    """Public endpoint: customer opts to pay by cash. Booking is confirmed but unpaid pending admin collection."""
+    from datetime import datetime, timezone
+    booking = ServiceBooking(
+        service_slug=body.service_slug,
+        service_name=body.service_name,
+        amount=body.amount,
+        customer_name=body.customer_name,
+        customer_email=body.customer_email,
+        customer_phone=body.customer_phone,
+        is_subscription=body.is_subscription,
+        payment_method=PaymentMethod.cash,
+        payment_status=BookingPaymentStatus.unpaid,
+        status=BookingStatus.confirmed,
+        notes=body.notes,
+    )
+    await booking.insert()
+    return _serialize(booking)
+
+
 # ── Admin endpoints ───────────────────────────────────────────────────────────
 
 @router.get("/bookings/", response_model=List[ServiceBookingOut])
@@ -189,4 +213,49 @@ async def update_booking_status(
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     await booking.set({"status": body.get("status")})
+    return _serialize(booking)
+
+
+@router.patch("/bookings/{booking_id}/payment", response_model=ServiceBookingOut)
+async def update_booking_payment(
+    booking_id: str,
+    body: dict,
+    _: Annotated[User, Depends(require_admin)],
+):
+    """Admin endpoint to manually set payment status and method (e.g. cash)."""
+    booking = await ServiceBooking.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+    update: dict = {}
+    if "payment_status" in body:
+        update["payment_status"] = body["payment_status"]
+    if "payment_method" in body:
+        update["payment_method"] = body["payment_method"]
+    if update:
+        from datetime import datetime, timezone
+        update["updated_at"] = datetime.now(timezone.utc)
+        await booking.set(update)
+    return _serialize(booking)
+
+
+@router.post("/bookings/manual", response_model=ServiceBookingOut, status_code=status.HTTP_201_CREATED)
+async def create_manual_booking(
+    body: ServiceBookingCreate,
+    _: Annotated[User, Depends(require_admin)],
+):
+    """Admin-only: create a booking for a cash-paying customer (no Razorpay)."""
+    booking = ServiceBooking(
+        service_slug=body.service_slug,
+        service_name=body.service_name,
+        amount=body.amount,
+        customer_name=body.customer_name,
+        customer_email=body.customer_email,
+        customer_phone=body.customer_phone,
+        is_subscription=getattr(body, 'is_subscription', False),
+        payment_method=PaymentMethod.cash,
+        payment_status=BookingPaymentStatus.unpaid,
+        status=BookingStatus.confirmed,
+        notes=body.notes,
+    )
+    await booking.insert()
     return _serialize(booking)

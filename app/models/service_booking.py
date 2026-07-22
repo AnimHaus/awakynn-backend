@@ -18,6 +18,11 @@ class BookingPaymentStatus(str, Enum):
     refunded = "refunded"
 
 
+class PaymentMethod(str, Enum):
+    online = "online"
+    cash = "cash"
+
+
 class ServiceBooking(Document):
     service_slug: str
     service_name: str
@@ -31,6 +36,7 @@ class ServiceBooking(Document):
     razorpay_payment_id: Optional[str] = None
     razorpay_subscription_id: Optional[str] = None
     is_subscription: bool = False
+    payment_method: PaymentMethod = PaymentMethod.online
     notes: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
