@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -7,13 +7,14 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
-    hash_password,
     verify_password,
 )
 from app.models.user import User
 from app.schemas.user import (
     RefreshRequest,
+    RegisterResponse,
     TokenResponse,
+    UserList,
     UserLogin,
     UserOut,
     UserRegister,
@@ -34,24 +35,25 @@ def _user_out(u: User) -> dict:
     }
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: UserRegister):
     existing = await User.find_one(User.email == body.email)
     if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This email is already registered")
     user = User(
         email=body.email,
-        hashed_password=hash_password(body.password),
         full_name=body.full_name,
         phone=body.phone,
+        age=body.age,
+        gender=body.gender,
+        medical_history=body.medical_history,
     )
     await user.insert()
-    uid = str(user.id)
     return {
-        "access_token": create_access_token(uid),
-        "refresh_token": create_refresh_token(uid),
-        "token_type": "bearer",
-        "user": _user_out(user),
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+        "message": "Details saved successfully",
     }
 
 
@@ -105,3 +107,30 @@ async def update_me(
     if update_data:
         await current_user.set(update_data)
     return _user_out(current_user)
+
+
+@router.get("/users", response_model=List[UserList])
+async def list_users(
+    current_user: Annotated[User, Depends(get_current_user)],
+    skip: int = 0,
+    limit: int = 50,
+):
+    """Admin-only: list all registered users."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    users = await User.find_all().skip(skip).limit(limit).to_list()
+    return [
+        {
+            "id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "phone": u.phone,
+            "age": u.age,
+            "gender": u.gender,
+            "medical_history": u.medical_history,
+            "is_active": u.is_active,
+            "is_admin": u.is_admin,
+            "created_at": u.created_at.isoformat(),
+        }
+        for u in users
+    ]

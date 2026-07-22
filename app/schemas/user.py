@@ -4,9 +4,18 @@ from pydantic import BaseModel, EmailStr
 
 class UserRegister(BaseModel):
     email: EmailStr
-    password: str
     full_name: str
-    phone: str = ""
+    phone: str
+    age: int
+    gender: str
+    medical_history: str
+
+
+class RegisterResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    message: str = "Details saved successfully"
 
 
 class UserLogin(BaseModel):
@@ -21,6 +30,21 @@ class UserOut(BaseModel):
     phone: str
     is_active: bool
     is_admin: bool
+
+    model_config = {"from_attributes": True}
+
+
+class UserList(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    phone: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    medical_history: str = ""
+    is_active: bool
+    is_admin: bool
+    created_at: str
 
     model_config = {"from_attributes": True}
 

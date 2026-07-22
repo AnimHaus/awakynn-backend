@@ -21,9 +21,12 @@ class Address(Document):
 
 class User(Document):
     email: Indexed(EmailStr, unique=True)  # type: ignore[valid-type]
-    hashed_password: str
+    hashed_password: str = ""
     full_name: str
     phone: str = ""
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    medical_history: str = ""
     addresses: List[dict] = []
     is_active: bool = True
     is_admin: bool = False
